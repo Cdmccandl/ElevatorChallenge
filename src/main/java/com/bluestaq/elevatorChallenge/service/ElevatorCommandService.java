@@ -21,13 +21,22 @@ public class ElevatorCommandService {
     // ==================== COMMAND QUEUING LOGIC ====================
 
     public void pressFloorButton(int floor) {
-        commandQueue.enqueue(ElevatorCommand.pressButton(floor));
+        if (!elevator.isValidFloor(floor)) {
+            throw new IllegalArgumentException("Invalid floor " + floor + "must be between " + elevator.getMinFloor() + "and " + elevator.getMaxFloor());
+            }
+            commandQueue.enqueue(ElevatorCommand.pressButton(floor));
+
     }
 
     /**
-     * Queue an open doors command
+     * Queue an open doors command, check to see if elevator is in motion
      */
     public void openDoors() {
+
+        if(elevator.isMoving()) {
+            throw new IllegalArgumentException("Cannot open doors: elevator is moving between floors");
+        }
+
         commandQueue.enqueue(ElevatorCommand.openDoors());
         log.info("Queued open doors command");
     }
@@ -36,6 +45,11 @@ public class ElevatorCommandService {
      * Queue a close doors command
      */
     public void closeDoors() {
+
+        if(elevator.isMoving()) {
+            throw new IllegalArgumentException("Doors are already closed and elevator is moving between floors");
+        }
+
         commandQueue.enqueue(ElevatorCommand.closeDoors());
         log.info("Queued close doors command");
     }
@@ -44,20 +58,14 @@ public class ElevatorCommandService {
      * Process commands from the commandQueue
      */
     private void processCommandQueue() {
-        // Don't process commands if elevator is busy with specific timed operations
-        if (elevator.isBusy()) {
-            return;
-        }
-
-        // Don't process if queue is empty
-        if (commandQueue.isEmpty()) {
+        // Don't process commands if elevator is busy with specific timed operations or idle
+        if (elevator.isBusy() || commandQueue.isEmpty()) {
             return;
         }
 
         // peek the next command
         ElevatorCommand command = commandQueue.peek();
         if (command == null) {
-            commandQueue.dequeue();
             return;
         }
 
@@ -65,15 +73,16 @@ public class ElevatorCommandService {
         if (command.canExecuteCommandInCurrentState(elevator)) {
             // Command executes its own logic and updates elevator state
             command.execute(elevator);
-            log.info("Executed command: {}", command.getCommandType());
-            commandQueue.dequeue();
         }
+            //remove the command from the queue regardless if it succeeded or not
+            commandQueue.dequeue();
+
     }
 
     // ==================== SCHEDULED PROCESSING (MAIN LOOP) ====================
 
     //we need to regularly consume objects from the command queue in order to keep the elevator up to date
-
+    //using spring scheduler to continually call this method every second
     @Scheduled(fixedRate = 1000)
     public void processElevatorOperations() {
 
@@ -113,7 +122,8 @@ public class ElevatorCommandService {
             // We've reached a destination - open doors
             log.info("Reached destination floor {} - opening doors", elevator.getCurrentFloor());
             elevator.startDoorOperationTimer();
-        } else if (elevator.hasDestinations()) {
+        }
+        if (elevator.hasDestinations()) {
             // More destinations - start movement to next one
             startMovementToNextDestination();
         } else {
@@ -158,7 +168,7 @@ public class ElevatorCommandService {
     private void completeDoorOperation() {
         elevator.stopDoorOperationTimer();
 
-        if (elevator.getCurrentState() == ElevatorState.DOORS_OPEN && !elevator.isDoorsOpen()) {
+        if (elevator.getCurrentState() == ElevatorState.DOORS_OPEN && elevator.isDoorsOpen()) {
             // Closing doors
             completeDoorClosing();
         } else {
