@@ -50,8 +50,8 @@ import lombok.extern.slf4j.Slf4j;
 
         // Cannot open doors while movement is in progress (floor-by-floor movement)
         if (elevator.isMovementInProgress()) {
-            log.debug("Cannot open doors: elevator is moving between floors");
-            return false;
+            log.error("Cannot open doors: elevator is moving between floors");
+            throw new IllegalArgumentException("Cannot open doors: elevator is moving between floors");
         }
 
         // Cannot open doors if door operation is already in progress

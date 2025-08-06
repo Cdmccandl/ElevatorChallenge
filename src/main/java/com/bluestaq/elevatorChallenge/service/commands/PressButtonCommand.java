@@ -23,16 +23,10 @@ public class PressButtonCommand implements ElevatorCommand {
 
     @Override
     public void execute(Elevator elevator) {
-        // Validate target floor
-        if (!elevator.isValidFloor(targetFloor)) {
-            log.warn("Invalid floor {}: must be between {} and {}",
-                    targetFloor, elevator.getMinFloor(), elevator.getMaxFloor());
-            return;
-        }
 
         // Check if already at target floor
         if (targetFloor == elevator.getCurrentFloor()) {
-            log.debug("Already at floor {}, ignoring button press", targetFloor);
+            log.info("Already at floor {}, ignoring button press", targetFloor);
             return;
         }
 
@@ -102,8 +96,6 @@ public class PressButtonCommand implements ElevatorCommand {
 
         // Start floor-by-floor movement to next destination
         elevator.startMovementToFloor(nextDestination);
-        log.info("Initiated movement from floor {} to floor {} (queue: {})",
-                elevator.getCurrentFloor(), nextDestination, elevator.getDestinationList());
     }
 
 
@@ -113,65 +105,6 @@ public class PressButtonCommand implements ElevatorCommand {
     public String getDescription() {
         return String.format("Press button for floor %d", targetFloor);
     }
-
-    /**
-     * Check if this command involves movement
-     */
-    public boolean isMovementCommand() {
-        return true;
-    }
-
-    /**
-     * Check if this command can be executed while doors are open
-     */
-    public boolean canExecuteWithDoorsOpen() {
-        return true; // Passengers can select floors while doors are open
-    }
-
-    /**
-     * Check if this command can be executed while moving
-     */
-    public boolean canExecuteWhileMoving() {
-        return true; // Can add destinations while moving between floors
-    }
-
-    /**
-     * Get estimated impact on total travel time
-     */
-    public long getEstimatedTravelTime(Elevator elevator) {
-        int currentFloor = elevator.getCurrentFloor();
-        int floorsToTravel = Math.abs(targetFloor - currentFloor);
-
-        // Estimate based on floor step interval and door operations
-        long movementTime = floorsToTravel * elevator.getFloorTravelTimeMs();
-        long doorTime = 2 * elevator.getDoorOperationTimeMs(); // Open + close
-
-        return movementTime + doorTime;
-    }
-
-    /**
-     * Check if this destination will be added to the end of queue
-     */
-    public boolean willBeAddedToQueue(Elevator elevator) {
-        return !elevator.getDestinationList().contains(targetFloor);
-    }
-
-    /**
-     * Get position this destination will have in queue
-     */
-    public int getQueuePosition(Elevator elevator) {
-        List<Integer> destinations = elevator.getDestinationList();
-
-        // Check if already in queue
-        int existingIndex = destinations.indexOf(targetFloor);
-        if (existingIndex != -1) {
-            return existingIndex + 1; // 1-based position
-        }
-
-        // Will be added to end
-        return destinations.size() + 1;
-    }
-
 
     @Override
     public String toString() {

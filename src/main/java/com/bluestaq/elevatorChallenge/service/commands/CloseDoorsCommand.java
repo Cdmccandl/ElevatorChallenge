@@ -40,8 +40,8 @@ public class CloseDoorsCommand implements ElevatorCommand {
         ElevatorState currentState = elevator.getCurrentState();
 
         // Cannot close doors while movement is in progress
-        if (elevator.isMovementInProgress()) {
-            log.debug("Cannot close doors: elevator is moving between floors");
+        if (currentState == ElevatorState.MOVING) {
+            log.info("Cannot close doors: elevator is moving between floors");
             return false;
         }
 

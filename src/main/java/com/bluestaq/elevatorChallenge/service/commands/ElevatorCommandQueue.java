@@ -25,7 +25,7 @@ public class ElevatorCommandQueue {
     //since I am using the ConcurrentLinkedQueue I dont have to explicitly define these as synchronized
     public void enqueue(ElevatorCommand command) {
         commandQueue.offer(command);
-        log.info("Command queued: {}", command.getCommandType());
+        log.info("Command queued: floor {}", command.getCommandType());
     }
 
     public ElevatorCommand dequeue() {
