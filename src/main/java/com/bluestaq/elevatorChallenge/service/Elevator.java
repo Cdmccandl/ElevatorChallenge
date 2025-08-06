@@ -48,10 +48,10 @@ public class Elevator {
     @Value("${elevator.max-floor:20}")
     private int maxFloor;
 
-    @Value("${elevator.floor-travel-time:2000}")
+    @Value("${elevator.floor-travel-time:4000}")
     private long floorTravelTimeMs;
 
-    @Value("${elevator.door-operation-time:2000}")
+    @Value("${elevator.door-operation-time:3000}")
     private long doorOperationTimeMs;
 
 
