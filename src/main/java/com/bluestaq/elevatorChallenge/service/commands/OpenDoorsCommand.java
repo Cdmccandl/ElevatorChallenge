@@ -18,25 +18,24 @@ import lombok.extern.slf4j.Slf4j;
 
     @Override
     public void execute(Elevator elevator) {
-        //check if we can execute command based on elevator state
-        // Validate current state
+        // Validate that we can execute in current state
         if (!canExecuteCommandInCurrentState(elevator)) {
-            log.warn("Cannot open doors - elevator state: {}, busy: {}",
-                    elevator.getCurrentState(), elevator.isBusy());
+            log.warn("Cannot open doors - elevator state: {}, moving: {}, busy: {}",
+                    elevator.getCurrentState(),
+                    elevator.isMovementInProgress(),
+                    elevator.isBusy());
             return;
         }
 
-        if (elevator.isDoorsOpen()) {
-            log.debug("Doors are already open at floor {}", elevator.getCurrentFloor());
-            return;
-        }
+        // Delegate to elevator's door opening method
+        boolean started = elevator.startDoorOpening();
 
-        //if we pass these checks we can start the door opening process
-        elevator.startDoorOperationTimer();
-        log.info("Started door opening process at floor {} ({}ms duration)",
-                elevator.getCurrentFloor(), elevator.getDoorOperationTimeMs());
-
+        if (started) {
+            log.info("Door opening initiated at floor {}", elevator.getCurrentFloor());
+        } else {
+            log.debug("Door opening not started - elevator reported unable to open");
         }
+    }
 
     @Override
     public String getCommandType() {
@@ -45,29 +44,26 @@ import lombok.extern.slf4j.Slf4j;
 
     @Override
     public boolean canExecuteCommandInCurrentState(Elevator elevator) {
-
-        ElevatorState currentState = elevator.getCurrentState();
-
-        // Cannot open doors while movement is in progress (floor-by-floor movement)
+        // Cannot open doors while moving
         if (elevator.isMovementInProgress()) {
-            log.error("Cannot open doors: elevator is moving between floors");
-            throw new IllegalArgumentException("Cannot open doors: elevator is moving between floors");
+            log.debug("Cannot open doors: elevator is moving between floors");
+            return false;
         }
 
-        // Cannot open doors if door operation is already in progress
+        // Cannot open if a door operation is already in progress
         if (elevator.isDoorOperationInProgress()) {
             log.debug("Cannot open doors: door operation already in progress");
             return false;
         }
 
-        // Cannot open doors if already open
+        // Cannot open if doors are already open
         if (elevator.isDoorsOpen()) {
             log.debug("Cannot open doors: doors are already open");
             return false;
         }
 
+        // Can open doors when IDLE or DOORS_OPEN (DOORS_OPEN state means doors are operating)
+        ElevatorState currentState = elevator.getCurrentState();
         return currentState == ElevatorState.IDLE || currentState == ElevatorState.DOORS_OPEN;
     }
-
-
 }

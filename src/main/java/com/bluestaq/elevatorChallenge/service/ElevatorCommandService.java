@@ -18,6 +18,11 @@ public class ElevatorCommandService {
     @Autowired
     private Elevator elevator;
 
+    // Track automatic door cycle
+    private boolean isAutomaticDoorCycle = false;
+    private long doorWaitStartTimeMs = 0;
+    private boolean isWaitingForPassengers = false;
+
     // ==================== COMMAND QUEUING LOGIC ====================
 
     public void pressFloorButton(int floor) {
@@ -36,7 +41,6 @@ public class ElevatorCommandService {
         if(elevator.isMoving()) {
             throw new IllegalArgumentException("Cannot open doors: elevator is moving between floors");
         }
-
         commandQueue.enqueue(ElevatorCommand.openDoors());
         log.info("Queued open doors command");
     }
@@ -54,102 +58,96 @@ public class ElevatorCommandService {
         log.info("Queued close doors command");
     }
 
-    /**
-     * Process commands from the commandQueue
-     */
+    // ==================== SCHEDULED PROCESSING (MAIN LOOP) ====================
+    @Scheduled(fixedRate = 1000)
+    public void processElevatorOperations() {
+        // 1. Check movement progress
+        checkMovementProgress();
+
+        // 2. Check door operation progress
+        checkDoorOperationProgress();
+
+        // 3. Check passenger wait time
+        checkPassengerWaitTime();
+
+        // 4. Process command queue if not busy
+        processCommandQueue();
+    }
+
+    // ==================== FIXED COMMAND PROCESSING ====================
+
     private void processCommandQueue() {
-        // Don't process commands if elevator is busy with specific timed operations or idle
-        if (elevator.isBusy() || commandQueue.isEmpty()) {
+        // Don't process if elevator is busy or waiting for passengers
+        if (elevator.isBusy() || isWaitingForPassengers) {
             return;
         }
 
-        // peek the next command
+        if (commandQueue.isEmpty()) {
+            return;
+        }
+
         ElevatorCommand command = commandQueue.peek();
         if (command == null) {
             return;
         }
 
-        // Check if command can be executed in current state
+        // Check if command can execute
         if (command.canExecuteCommandInCurrentState(elevator)) {
-            // Command executes its own logic and updates elevator state
-            command.execute(elevator);
-        }
-            //remove the command from the queue regardless if it succeeded or not
+            // Remove from queue
             commandQueue.dequeue();
 
-    }
-
-    // ==================== SCHEDULED PROCESSING (MAIN LOOP) ====================
-
-    //we need to regularly consume objects from the command queue in order to keep the elevator up to date
-    //using spring scheduler to continually call this method every second
-    @Scheduled(fixedRate = 1000)
-    public void processElevatorOperations() {
-
-        //Check the elevators movement and door timers
-        checkMovementProgress();
-        checkDoorOperationProgress();
-
-        // 2. Process command queue if elevator is not busy with timed operations
-        processCommandQueue();
-    }
-
-
-    // ==================== TIMING CHECKS ====================
-
-    //we need to regularly check the elevators current state to determine when a command is complete
-
-    /**
-     * Check if the elevator is currently moving
-     */
-    private void checkMovementProgress() {
-        if (elevator.isMovementInProgress()) {
-            // Move one floor and report
-            boolean movementComplete = elevator.moveToNextFloor();
-
-            if (movementComplete) {
-                // Movement to target complete, check what to do next
-                handleMovementCompletion();
+            // Track if this is a manual door operation
+            String commandType = command.getCommandType();
+            if (commandType.equals("OPEN DOORS") || commandType.equals("CLOSE DOORS")) {
+                isAutomaticDoorCycle = false;  // Mark as manual operation
             }
-        }
-    }
 
-    /**
-     * Handle completion of movement to a floor
-     */
-    private void handleMovementCompletion() {
-        if (elevator.shouldStopAtCurrentFloor()) {
-            // We've reached a destination - open doors
-            log.info("Reached destination floor {} - opening doors", elevator.getCurrentFloor());
-            elevator.startDoorOperationTimer();
-        }
-        if (elevator.hasDestinations()) {
-            // More destinations - start movement to next one
-            startMovementToNextDestination();
+            // Execute the command
+            command.execute(elevator);
+            log.info("Executed command: {}", commandType);
+
         } else {
-            // No more destinations - go idle
-            elevator.setCurrentState(ElevatorState.IDLE);
-            log.info("All destinations reached - elevator idle at floor {}", elevator.getCurrentFloor());
+            // Command cannot execute in current state
+            log.debug("Command {} cannot execute in state {}, leaving in queue",
+                    command.getCommandType(), elevator.getCurrentState());
         }
     }
 
-    /**
-     * Start movement to next destination in FIFO queue
-     */
-    private void startMovementToNextDestination() {
-        if (!elevator.hasDestinations() || !elevator.canStartMovement()) {
+    // ==================== MOVEMENT HANDLING ====================
+
+    private void checkMovementProgress() {
+        if (!elevator.isMovementInProgress()) {
             return;
         }
 
-        Integer nextDestination = elevator.peekNextDestination();
-        if (nextDestination != null) {
-            elevator.startMovementToFloor(nextDestination);
+        boolean movementComplete = elevator.moveToNextFloor();
+
+        if (movementComplete) {
+            handleMovementCompletion();
         }
     }
 
-    /**
-     * Check door operation progress and complete if time elapsed
-     */
+    private void handleMovementCompletion() {
+        // Check if we stopped at a destination
+        if (elevator.getCurrentState() == ElevatorState.IDLE && !elevator.isMovementInProgress()) {
+            log.info("Reached destination, starting automatic door cycle");
+            startAutomaticDoorCycle();
+        }
+    }
+
+    private void startAutomaticDoorCycle() {
+        isAutomaticDoorCycle = true;
+
+        if (elevator.startDoorOpening()) {
+            log.info("Started automatic door opening at floor {}", elevator.getCurrentFloor());
+        } else {
+            log.warn("Failed to start automatic door opening");
+            isAutomaticDoorCycle = false;
+        }
+    }
+
+    // ==================== DOOR OPERATION HANDLING ====================
+
     private void checkDoorOperationProgress() {
         if (!elevator.isDoorOperationInProgress()) {
             return;
@@ -158,40 +156,79 @@ public class ElevatorCommandService {
         long elapsedTime = elevator.getElapsedDoorOperationTime();
 
         if (elapsedTime >= elevator.getDoorOperationTimeMs()) {
-            completeDoorOperation();
+            // Door operation complete
+            Elevator.DoorOperationType operationType = elevator.getCurrentDoorOperation();
+
+            // Complete the operation
+            elevator.completeDoorOperation();
+
+            // Handle post-operation logic
+            if (operationType == Elevator.DoorOperationType.OPENING) {
+                if (isAutomaticDoorCycle) {
+                    // Start passenger wait for automatic cycle
+                    startPassengerWait();
+                }
+                // For manual open, doors just stay open until manually closed
+            } else if (operationType == Elevator.DoorOperationType.CLOSING) {
+                if (isAutomaticDoorCycle) {
+                    // Automatic close complete
+                    isAutomaticDoorCycle = false;
+                }
+                // Check for next destination
+                checkForNextDestination();
+            }
         }
     }
 
-    /**
-     * Complete door operation
-     */
-    private void completeDoorOperation() {
-        elevator.stopDoorOperationTimer();
+    private void startPassengerWait() {
+        isWaitingForPassengers = true;
+        doorWaitStartTimeMs = System.currentTimeMillis();
+        log.info("Waiting {}ms for passengers", elevator.getDoorWaitTimeMs());
+    }
 
-        if (elevator.getCurrentState() == ElevatorState.DOORS_OPEN && elevator.isDoorsOpen()) {
-            // Closing doors
-            completeDoorClosing();
-        } else {
-            // Opening doors
-            completeDoorOpening();
+    private void checkPassengerWaitTime() {
+        if (!isWaitingForPassengers) {
+            return;
+        }
+
+        long elapsedWaitTime = System.currentTimeMillis() - doorWaitStartTimeMs;
+
+        if (elapsedWaitTime >= elevator.getDoorWaitTimeMs()) {
+            // Wait complete, close doors
+            isWaitingForPassengers = false;
+
+            if (elevator.startDoorClosing()) {
+                log.info("Passenger wait complete, closing doors automatically");
+            }
         }
     }
 
-    private void completeDoorOpening() {
-        elevator.setDoorsOpen(true);
-        elevator.setCurrentState(ElevatorState.DOORS_OPEN);
-        log.info("Doors opened at floor {}", elevator.getCurrentFloor());
-    }
-
-    private void completeDoorClosing() {
-        elevator.setDoorsOpen(false);
-        log.info("Doors closed at floor {}", elevator.getCurrentFloor());
-
+    private void checkForNextDestination() {
         if (elevator.hasDestinations()) {
             startMovementToNextDestination();
         } else {
-            elevator.setCurrentState(ElevatorState.IDLE);
+            log.info("No more destinations, elevator idle at floor {}",
+                    elevator.getCurrentFloor());
         }
     }
 
+    // ==================== MOVEMENT INITIATION ====================
+
+    private void startMovementToNextDestination() {
+        if (!elevator.hasDestinations() || !elevator.canStartMovement()) {
+            return;
+        }
+
+        Integer nextDestination = elevator.peekNextDestination();
+        if (nextDestination != null) {
+            if (nextDestination.equals(elevator.getCurrentFloor())) {
+                // Already at this floor
+                elevator.pollNextDestination();
+                log.info("Already at destination floor {}", nextDestination);
+                startAutomaticDoorCycle();
+            } else {
+                elevator.startMovementToFloor(nextDestination);
+            }
+        }
+    }
 }

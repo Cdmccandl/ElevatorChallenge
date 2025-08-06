@@ -23,10 +23,15 @@ public class PressButtonCommand implements ElevatorCommand {
 
     @Override
     public void execute(Elevator elevator) {
-
         // Check if already at target floor
         if (targetFloor == elevator.getCurrentFloor()) {
-            log.info("Already at floor {}, ignoring button press", targetFloor);
+            log.info("Already at floor {}", targetFloor);
+
+            // If doors are closed and we're idle, open them
+            if (!elevator.isDoorsOpen() && elevator.getCurrentState() == ElevatorState.IDLE) {
+                log.info("Opening doors at current floor {}", targetFloor);
+                elevator.startDoorOpening();
+            }
             return;
         }
 
@@ -39,9 +44,10 @@ public class PressButtonCommand implements ElevatorCommand {
 
         // Add to FIFO destination queue
         elevator.addDestination(targetFloor);
-        log.info("Button pressed for floor {}. Current queue: {}", targetFloor, elevator.getDestinationList());
+        log.info("Button pressed for floor {}. Current queue: {}",
+                targetFloor, elevator.getDestinationList());
 
-        // Start movement if elevator is idle and can start moving
+        // Start movement if elevator is idle and ready
         if (shouldInitiateMovement(elevator)) {
             initiateMovementToNextDestination(elevator);
         }
@@ -52,14 +58,19 @@ public class PressButtonCommand implements ElevatorCommand {
         return "PRESS FLOOR BUTTON: " + targetFloor;
     }
 
-    /**
-     * Check if button press can be executed in current elevator state
-     */
     @Override
     public boolean canExecuteCommandInCurrentState(Elevator elevator) {
+        // Validate floor is in range
+        if (!elevator.isValidFloor(targetFloor)) {
+            log.warn("Invalid floor {}: must be between {} and {}",
+                    targetFloor, elevator.getMinFloor(), elevator.getMaxFloor());
+            return false;
+        }
+
         ElevatorState currentState = elevator.getCurrentState();
 
-        // Can press buttons in most operational states
+        // Can press buttons in all normal operational states
+        // (passengers can select floors while doors are open or while moving)
         return currentState == ElevatorState.IDLE ||
                 currentState == ElevatorState.MOVING ||
                 currentState == ElevatorState.DOORS_OPEN;
@@ -71,9 +82,14 @@ public class PressButtonCommand implements ElevatorCommand {
     private boolean shouldInitiateMovement(Elevator elevator) {
         // Only initiate movement if:
         // 1. Elevator is IDLE (not moving, doors closed)
-        // 2. Elevator can start movement (not busy with other operations)
-        // 3. There are destinations to process
+        // 2. Doors are closed
+        // 3. No door operation in progress
+        // 4. Can start movement
+        // 5. Has destinations to process
+
         return elevator.getCurrentState() == ElevatorState.IDLE &&
+                !elevator.isDoorsOpen() &&
+                !elevator.isDoorOperationInProgress() &&
                 elevator.canStartMovement() &&
                 elevator.hasDestinations();
     }
@@ -89,15 +105,23 @@ public class PressButtonCommand implements ElevatorCommand {
         }
 
         if (nextDestination.equals(elevator.getCurrentFloor())) {
-            log.debug("Next destination {} is current floor, removing from queue", nextDestination);
+            // Already at this floor, remove from queue
             elevator.pollNextDestination();
+            log.debug("Next destination {} is current floor, removed from queue", nextDestination);
+
+            // Open doors if they're closed
+            if (!elevator.isDoorsOpen() && !elevator.isDoorOperationInProgress()) {
+                log.info("At destination floor {}, opening doors", nextDestination);
+                elevator.startDoorOpening();
+            }
             return;
         }
 
         // Start floor-by-floor movement to next destination
         elevator.startMovementToFloor(nextDestination);
+        log.info("Initiated movement from floor {} to floor {}",
+                elevator.getCurrentFloor(), nextDestination);
     }
-
 
     /**
      * Get human-readable description of this command

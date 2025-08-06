@@ -13,7 +13,7 @@ import java.util.*;
 
 /**
  * Singleton elevator component that manages the elevator's state and behavior.
- * This class represents a single elevator with its current position, state, and destinations.
+ * This class represents a single elevator with its current position, direction, and destinations.
  * it is initialized at the ground floor ie floor 1
  * it will be in the idle state with the doors closed
  */
@@ -29,6 +29,7 @@ public class Elevator {
     private ElevatorDirection direction = ElevatorDirection.NONE;
     private ElevatorState currentState = ElevatorState.IDLE;
     private boolean doorsOpen = false;
+
     //to keep things simple I am going to use FIFO, so I decided its best
     //to use a Linked List to accomplish this
     private final Queue<Integer> destinationFloors = new LinkedList<>();
@@ -40,6 +41,15 @@ public class Elevator {
     // Door operation timing
     private long doorOperationStartTimeMs = 0;
     private boolean isDoorOperationInProgress = false;
+
+
+    public enum DoorOperationType {
+        OPENING,
+        CLOSING,
+        NONE
+    }
+
+    private DoorOperationType currentDoorOperation = DoorOperationType.NONE;
 
     //assuming no basement floors for this implementation
     private int minFloor = 1;
@@ -53,6 +63,9 @@ public class Elevator {
 
     @Value("${elevator.door-operation-time:3000}")
     private long doorOperationTimeMs;
+
+    @Value("${elevator.door-wait-time:5000}")
+    private long doorWaitTimeMs;
 
 
     // ==================== MOVEMENT STATE MANAGEMENT ====================
@@ -157,26 +170,98 @@ public class Elevator {
     // ==================== DOOR OPERATION TIMING ====================
 
     /**
-     * Start the door operation timer
+     * Start door opening operation
+     * @return true if operation started, false if already in progress or doors open
      */
-    public void startDoorOperationTimer() {
+    public boolean startDoorOpening() {
+        if (isDoorOperationInProgress) {
+            log.warn("Cannot open doors: door operation already in progress");
+            return false;
+        }
+
+        if (doorsOpen) {
+            log.debug("Doors are already open");
+            return false;
+        }
+
+        if (isMovementInProgress) {
+            log.warn("Cannot open doors while moving");
+            return false;
+        }
+
         isDoorOperationInProgress = true;
+        currentDoorOperation = DoorOperationType.OPENING;
         doorOperationStartTimeMs = System.currentTimeMillis();
-        log.debug("Door operation timer started");
+        setCurrentState(ElevatorState.DOORS_OPEN);  // State indicates doors are opening/open
+
+        log.info("Started door opening at floor {} ({}ms duration)",
+                currentFloor, doorOperationTimeMs);
+        return true;
     }
 
     /**
-     * Stop the door operation timer
+     * Start door closing operation
+     * @return true if operation started, false if already in progress or doors closed
      */
-    public void stopDoorOperationTimer() {
+    public boolean startDoorClosing() {
+        if (isDoorOperationInProgress) {
+            log.warn("Cannot close doors: door operation already in progress");
+            return false;
+        }
+
+        if (!doorsOpen) {
+            log.debug("Doors are already closed");
+            return false;
+        }
+
+        isDoorOperationInProgress = true;
+        currentDoorOperation = DoorOperationType.CLOSING;
+        doorOperationStartTimeMs = System.currentTimeMillis();
+
+        log.info("Started door closing at floor {} ({}ms duration)",
+                currentFloor, doorOperationTimeMs);
+        return true;
+    }
+
+    /**
+     * Complete the current door operation
+     * Should be called by the service when door operation time has elapsed
+     */
+    public void completeDoorOperation() {
+        if (!isDoorOperationInProgress) {
+            log.warn("No door operation to complete");
+            return;
+        }
+
         isDoorOperationInProgress = false;
+
+        if (currentDoorOperation == DoorOperationType.OPENING) {
+            doorsOpen = true;
+            log.info("Doors opened at floor {}", currentFloor);
+        } else if (currentDoorOperation == DoorOperationType.CLOSING) {
+            doorsOpen = false;
+            setCurrentState(ElevatorState.IDLE);  // Back to idle after closing
+            log.info("Doors closed at floor {}", currentFloor);
+        }
+
+        currentDoorOperation = DoorOperationType.NONE;
         doorOperationStartTimeMs = 0;
-        log.debug("Door operation timer stopped");
     }
 
     /**
-     * Get elapsed time since door operation started
+     * Cancel current door operation
      */
+    public void cancelDoorOperation() {
+        if (isDoorOperationInProgress) {
+            isDoorOperationInProgress = false;
+            currentDoorOperation = DoorOperationType.NONE;
+            doorOperationStartTimeMs = 0;
+            log.info("Door operation cancelled");
+        }
+    }
+
+    // ==================== KEEP EXISTING DOOR TIMING METHODS ====================
+
     public long getElapsedDoorOperationTime() {
         if (!isDoorOperationInProgress) {
             return 0;
@@ -186,10 +271,6 @@ public class Elevator {
 
     // ==================== BUSY FLAG LOGIC ====================
 
-    /**
-     * Check if elevator is busy with any operation
-     * BUSY = movement in progress OR door operation in progress
-     */
     public boolean isBusy() {
         return isMovementInProgress || isDoorOperationInProgress;
     }
