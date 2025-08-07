@@ -1,9 +1,9 @@
-package com.bluestaq.elevatorChallenge.service.commands;
+package com.bluestaq.elevatorchallenge.service.commands;
 
 
-import com.bluestaq.elevatorChallenge.service.ElevatorDoor;
-import com.bluestaq.elevatorChallenge.service.ElevatorState;
-import com.bluestaq.elevatorChallenge.service.SafetyValidator;
+import com.bluestaq.elevatorchallenge.service.ElevatorDoor;
+import com.bluestaq.elevatorchallenge.service.ElevatorState;
+import com.bluestaq.elevatorchallenge.service.SafetyValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package com.bluestaq.elevatorChallenge;
+package com.bluestaq.elevatorchallenge;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

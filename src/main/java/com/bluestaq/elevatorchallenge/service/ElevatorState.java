@@ -1,12 +1,10 @@
-package com.bluestaq.elevatorChallenge.service;
+package com.bluestaq.elevatorchallenge.service;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.*;
 
 /**
  * Singleton elevator component that manages the elevator's state and behavior.

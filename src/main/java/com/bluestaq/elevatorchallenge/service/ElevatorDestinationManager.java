@@ -1,4 +1,4 @@
-package com.bluestaq.elevatorChallenge.service;
+package com.bluestaq.elevatorchallenge.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

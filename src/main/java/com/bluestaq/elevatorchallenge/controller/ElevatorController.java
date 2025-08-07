@@ -1,13 +1,11 @@
-package com.bluestaq.elevatorChallenge.controller;
+package com.bluestaq.elevatorchallenge.controller;
 
-import com.bluestaq.elevatorChallenge.dto.ElevatorDTO;
-import com.bluestaq.elevatorChallenge.service.ElevatorService;
+import com.bluestaq.elevatorchallenge.dto.ElevatorDTO;
+import com.bluestaq.elevatorchallenge.service.ElevatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("")

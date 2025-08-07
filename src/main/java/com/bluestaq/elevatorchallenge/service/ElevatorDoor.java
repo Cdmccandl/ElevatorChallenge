@@ -1,4 +1,4 @@
-package com.bluestaq.elevatorChallenge.service;
+package com.bluestaq.elevatorchallenge.service;
 
 public enum ElevatorDoor {
     OPENING,

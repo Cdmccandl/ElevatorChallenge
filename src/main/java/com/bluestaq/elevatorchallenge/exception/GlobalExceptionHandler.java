@@ -1,4 +1,4 @@
-package com.bluestaq.elevatorChallenge.exception;
+package com.bluestaq.elevatorchallenge.exception;
 
 import lombok.Getter;
 import lombok.Setter;

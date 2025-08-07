@@ -1,12 +1,11 @@
-package com.bluestaq.elevatorChallenge.service;
+package com.bluestaq.elevatorchallenge.service;
 
 
-import com.bluestaq.elevatorChallenge.dto.ElevatorDTO;
-import com.bluestaq.elevatorChallenge.exception.ElevatorEmergencyException;
-import com.bluestaq.elevatorChallenge.service.commands.CloseDoorsCommand;
-import com.bluestaq.elevatorChallenge.service.commands.ElevatorCommand;
-import com.bluestaq.elevatorChallenge.service.commands.OpenDoorsCommand;
-import com.bluestaq.elevatorChallenge.service.commands.PressButtonCommand;
+import com.bluestaq.elevatorchallenge.dto.ElevatorDTO;
+import com.bluestaq.elevatorchallenge.exception.ElevatorEmergencyException;
+import com.bluestaq.elevatorchallenge.service.commands.CloseDoorsCommand;
+import com.bluestaq.elevatorchallenge.service.commands.OpenDoorsCommand;
+import com.bluestaq.elevatorchallenge.service.commands.PressButtonCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

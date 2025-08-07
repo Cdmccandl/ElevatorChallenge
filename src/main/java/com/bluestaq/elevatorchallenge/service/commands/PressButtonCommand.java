@@ -1,16 +1,14 @@
-package com.bluestaq.elevatorChallenge.service.commands;
+package com.bluestaq.elevatorchallenge.service.commands;
 
 
-import com.bluestaq.elevatorChallenge.service.ElevatorDestinationManager;
-import com.bluestaq.elevatorChallenge.service.ElevatorMovement;
-import com.bluestaq.elevatorChallenge.service.ElevatorState;
+import com.bluestaq.elevatorchallenge.service.ElevatorDestinationManager;
+import com.bluestaq.elevatorchallenge.service.ElevatorMovement;
+import com.bluestaq.elevatorchallenge.service.ElevatorState;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.print.attribute.standard.Destination;
 
 /**
  * Command to press a floor button and add destination to the elevator queue.

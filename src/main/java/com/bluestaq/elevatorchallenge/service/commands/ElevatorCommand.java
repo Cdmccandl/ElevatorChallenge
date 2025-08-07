@@ -1,6 +1,6 @@
-package com.bluestaq.elevatorChallenge.service.commands;
+package com.bluestaq.elevatorchallenge.service.commands;
 
-import com.bluestaq.elevatorChallenge.service.ElevatorState;
+import com.bluestaq.elevatorchallenge.service.ElevatorState;
 
 //elevator command interface grouping similar functionality of a command
 public interface ElevatorCommand {
