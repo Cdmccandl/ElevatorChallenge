@@ -77,6 +77,9 @@ public class ElevatorService {
         log.info("REST request: Press floor button {}", targetFloorNumber);
         checkEmergencyState();
 
+        //if elevator is IDLE and currentFloor button is pressed we open the doors
+        checkIfButtonPressedOnCurrentFloor(targetFloorNumber);
+
         pressButtonCommand.setTargetFloor(targetFloorNumber);
         pressButtonCommand.executeCommand(elevatorState);
 
@@ -439,6 +442,37 @@ public class ElevatorService {
     private void checkEmergencyState() {
         if (elevatorState.getCurrentMovementState() == ElevatorMovement.EMERGENCY) {
             throw new ElevatorEmergencyException();
+        }
+    }
+    // emergency state checker
+    private void checkIfButtonPressedOnCurrentFloor(int targetFloorNumber) {
+        // Check if this is a "current floor" request that should cycle doors
+        if (targetFloorNumber == elevatorState.getCurrentFloor() &&
+                elevatorState.getCurrentMovementState() == ElevatorMovement.IDLE) {
+
+            log.info("Current floor button pressed when elevator is IDLE at floor {} - cycling doors at floor {}", elevatorState.getCurrentFloor(), targetFloorNumber);
+
+            // Handle door cycling immediately based on current door state
+            switch (elevatorState.getCurrentDoorState()) {
+                case CLOSED:
+                    log.info("Opening doors for current floor request");
+                    openDoorsCommand.executeCommand(elevatorState);
+                    break;
+
+                case OPEN:
+                    log.info("Closing doors for current floor request");
+                    closeDoorsCommand.executeCommand(elevatorState);
+                    break;
+
+                case OPENING:
+                    log.info("Doors already opening - no action needed");
+                    break;
+
+                case CLOSING:
+                    log.info("Doors closing - reopening for current floor request");
+                    openDoorsCommand.executeCommand(elevatorState);
+                    break;
+            }
         }
     }
 }
