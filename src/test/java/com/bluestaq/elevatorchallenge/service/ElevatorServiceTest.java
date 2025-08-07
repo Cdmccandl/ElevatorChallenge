@@ -1,8 +1,8 @@
-package com.bluestaq.elevatorChallenge.service;
+package com.bluestaq.elevatorchallenge.service;
 
-import com.bluestaq.elevatorChallenge.service.commands.CloseDoorsCommand;
-import com.bluestaq.elevatorChallenge.service.commands.OpenDoorsCommand;
-import com.bluestaq.elevatorChallenge.service.commands.PressButtonCommand;
+import com.bluestaq.elevatorchallenge.service.commands.CloseDoorsCommand;
+import com.bluestaq.elevatorchallenge.service.commands.OpenDoorsCommand;
+import com.bluestaq.elevatorchallenge.service.commands.PressButtonCommand;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
