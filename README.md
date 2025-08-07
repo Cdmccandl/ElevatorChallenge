@@ -1,7 +1,7 @@
 # Elevator Challenge
 A homework coding challenge given to me by Bluestaq to simulate an Elevator. There was an additional request to containerize this service as well
 
-[![Build Status](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge.svg?token=QA1pjUWHEzzRjMXv5zS3&branch=main)](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)
+[![Build Status](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge.svg?token=QA1pjUWHEzzRjMXv5zS3&branch=main)](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)
 
 [![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)
 
