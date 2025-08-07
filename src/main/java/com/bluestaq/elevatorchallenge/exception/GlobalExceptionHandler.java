@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ElevatorEmergencyException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public ErrorMessageDetails handleEmergencyException(ElevatorEmergencyException ex, WebRequest request) {
-        log.error("🚨 Emergency stop blocked request: {}", request.getDescription(false));
+        log.error("Emergency stop blocked request: {}", request.getDescription(false));
         return new ErrorMessageDetails(ex.getMessage(), request.getDescription(false));
     }
 
