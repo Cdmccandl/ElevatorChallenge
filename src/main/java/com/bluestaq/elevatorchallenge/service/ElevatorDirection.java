@@ -41,15 +41,6 @@ public enum ElevatorDirection {
         return NONE;
     }
 
-    // Check if a floor is in the direction of travel
-    public boolean isTowards(int currentFloor, int targetFloor) {
-        return switch (this) {
-            case UP -> targetFloor > currentFloor;
-            case DOWN -> targetFloor < currentFloor;
-            case NONE -> true; // Can go anywhere when stationary
-        };
-    }
-
     @Override
     public String toString() {
         return name() + " (" + description + ")";
