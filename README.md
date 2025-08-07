@@ -1,7 +1,7 @@
 # Elevator Challenge
 A homework coding challenge given to me by Bluestaq to simulate an Elevator. There was an additional request to containerize this service as well
 
-[![Build Status](https://travis-ci.com/Cdmccandl/ElevatorChallenge.svg?branch=main)](https://travis-ci.com/Cdmccandl/ElevatorChallenge)
+[![Build Status](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge.svg?token=QA1pjUWHEzzRjMXv5zS3&branch=main)](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge) 
 
 
 ## Assumptions
