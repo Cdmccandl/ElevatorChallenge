@@ -27,10 +27,6 @@ public class ElevatorState {
     private ElevatorMovement currentMovementState = ElevatorMovement.IDLE;
     private ElevatorDoor currentDoorState = ElevatorDoor.CLOSED;
 
-    //to keep things simple I am going to use FIFO, so I decided its best
-    //to use a Linked List to accomplish this
-    private final Queue<Integer> destinationFloors = new LinkedList<>();
-
     //assuming no basement floors for this implementation
     private int minFloor = 1;
 
@@ -63,10 +59,4 @@ public class ElevatorState {
         return floor >= minFloor && floor <= maxFloor;
     }
 
-    /**
-     * Check if elevator is currently moving
-     */
-    public boolean isMoving() {
-        return currentMovementState == ElevatorMovement.MOVING;
-    }
 }

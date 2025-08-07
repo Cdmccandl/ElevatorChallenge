@@ -43,8 +43,4 @@ public class CloseDoorsCommand implements ElevatorCommand {
         return safetyValidator.canCloseDoors(elevator);
     }
 
-    @Override
-    public String getCommandType() {
-        return "";
-    }
 }

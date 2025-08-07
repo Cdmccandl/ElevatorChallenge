@@ -8,14 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/**
- * A POJO that defines the open doors command on the elevator.
- * This will:
- * 1. Set doors to open state
- * 2. Transition elevator to DOORS_OPEN state
- * 3. Stop any movement (set direction to NONE)
- *
- */
  @Slf4j
  @Component
  public class OpenDoorsCommand implements ElevatorCommand {
@@ -44,11 +36,6 @@ import org.springframework.stereotype.Component;
 
         throw new IllegalArgumentException("Cannot execute Open Doors command in current elevator state");
 
-    }
-
-    @Override
-    public String getCommandType() {
-        return "OPEN DOORS";
     }
 
     @Override

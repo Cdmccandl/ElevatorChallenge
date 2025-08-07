@@ -58,6 +58,7 @@ public class ElevatorDestinationManager {
         }
 
         // Remove from both sets if present to avoid duplicates, this isnt necessary but it is safe to have
+        // could be removed if coverage is needed
         upwardFloors.remove(targetFloor);
         downwardFloors.remove(targetFloor);
 

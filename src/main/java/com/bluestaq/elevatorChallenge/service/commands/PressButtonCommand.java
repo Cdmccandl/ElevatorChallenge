@@ -70,15 +70,8 @@ public class PressButtonCommand implements ElevatorCommand {
         // Can press buttons in most states
         ElevatorMovement currentState = elevatorState.getCurrentMovementState();
 
-        //TODO: unless I add another state is this necessary?
-        // Allow button presses when:
-        // - IDLE: Elevator is waiting
-        // - MOVING: Passengers can select additional floors while traveling
         return currentState == ElevatorMovement.IDLE ||
                 currentState == ElevatorMovement.MOVING;
     }
 
-    public String getCommandType() {
-        return "PRESS_FLOOR_BUTTON";
-    }
 }
