@@ -38,7 +38,7 @@ public class PressButtonCommand implements ElevatorCommand {
 
         // Don't add to destinations list if already at target floor
         if (targetFloor == state.getCurrentFloor()) {
-            log.info("Already at floor {}, no movement action inputted", targetFloor);
+            log.info("Already at floor {}, and elevator is MOVING movement action ignored", targetFloor);
             return true;
         }
 

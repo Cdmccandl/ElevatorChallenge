@@ -78,7 +78,10 @@ public class ElevatorService {
         checkEmergencyState();
 
         //if elevator is IDLE and currentFloor button is pressed we open the doors
-        checkIfButtonPressedOnCurrentFloor(targetFloorNumber);
+        if(checkIfButtonPressedOnCurrentFloor(targetFloorNumber)){
+            return;
+        }
+
 
         pressButtonCommand.setTargetFloor(targetFloorNumber);
         pressButtonCommand.executeCommand(elevatorState);
@@ -445,7 +448,7 @@ public class ElevatorService {
         }
     }
     // emergency state checker
-    private void checkIfButtonPressedOnCurrentFloor(int targetFloorNumber) {
+    private boolean checkIfButtonPressedOnCurrentFloor(int targetFloorNumber) {
         // Check if this is a "current floor" request that should cycle doors
         if (targetFloorNumber == elevatorState.getCurrentFloor() &&
                 elevatorState.getCurrentMovementState() == ElevatorMovement.IDLE) {
@@ -473,6 +476,8 @@ public class ElevatorService {
                     openDoorsCommand.executeCommand(elevatorState);
                     break;
             }
+            return true;
         }
+        return false;
     }
 }
