@@ -1,15 +1,14 @@
 package com.bluestaq.elevatorChallenge.service;
 
-public enum ElevatorState {
+public enum ElevatorMovement {
 
-    IDLE("Elevator is stationary and waiting for commands"),
-    MOVING("Elevator is traveling between floors"),
-    DOORS_OPEN("Elevator doors are open for loading/unloading");
+    IDLE("Elevator is stationary and waiting to execute its next command"),
+    MOVING("Elevator is traveling between floors");
 
 
     private final String description;
 
-    ElevatorState(String description) {
+    ElevatorMovement(String description) {
         this.description = description;
     }
 
