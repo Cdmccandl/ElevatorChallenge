@@ -1,57 +1,66 @@
 package com.bluestaq.elevatorChallenge.service;
 
+import com.bluestaq.elevatorChallenge.service.commands.CloseDoorsCommand;
+import com.bluestaq.elevatorChallenge.service.commands.OpenDoorsCommand;
 import com.bluestaq.elevatorChallenge.service.commands.PressButtonCommand;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class ElevatorServiceTest {
 
-    @Mock
+    @Spy
     ElevatorState elevator;
 
     @Spy
     ElevatorDestinationManager destinationManager;
 
+    @Mock
+    SafetyValidator safetyValidator;
+
     @InjectMocks
-    PressButtonCommand pressButton;
+    private OpenDoorsCommand openDoorsCommand = Mockito.spy(OpenDoorsCommand.class);
+
+    @InjectMocks
+    private CloseDoorsCommand closeDoorsCommand = Mockito.spy(CloseDoorsCommand.class);
+
+    @InjectMocks
+    private PressButtonCommand pressButtonCommand = Mockito.spy(PressButtonCommand.class);
 
     @InjectMocks
     ElevatorService elevatorCommandService;
 
     @Test
-    @Disabled
-    public void testPressOpenDoorCommandOnIdleState() {
+    public void testPressOpenDoorCommandWhenClosed() {
 
-        //create the openDoors command via the factory
+        Mockito.doReturn(true).when(safetyValidator).canOpenDoors(Mockito.any());
         elevatorCommandService.openDoors();
 
-        //consume it from the command queue
+        //run a loop of the main elevator loop
         elevatorCommandService.processElevatorOperations();
 
-        elevatorCommandService.processElevatorOperations();
-
+        assertEquals(ElevatorDoor.OPENING, elevatorCommandService.getCurrentElevatorState().doorState());
 
     }
 
     @Test
-    @Disabled
-    public void testPressCloseDoorCommandOnIdleState() {
+    public void testPressCloseDoorWhenClosedDoesNotThrowException() {
 
-        //create the openDoors command via the factory
+
         elevatorCommandService.closeDoors();
 
-        //consume it from the command queue
-        elevatorCommandService.processElevatorOperations();
-
-        elevatorCommandService.processElevatorOperations();
-
-
+        assertDoesNotThrow(() -> {
+            elevatorCommandService.processElevatorOperations();
+        });
     }
 
     @Test
