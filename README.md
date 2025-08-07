@@ -31,7 +31,7 @@ Some of the assumptions that I made for this implementation
 - Travis CI integration to show build results, codeQL integration to show security concerns on the codebase.
 
 ## Potential Enhancements
-- Change the number of floors or elveator timers during RUNTIME
+- Change the number of floors or elevator timers during RUNTIME
 - A spring logging framework, with this being asked to include a containerized option this would have been a nice touch
 - More than one elevator, I believe the design pattern applied here allows for scalability when adding more elevators
 - Only minimal javadoc was actually put in place, generally on classes themselves but I commented lots throughout to detail the specific algorithm/design patterns applied
