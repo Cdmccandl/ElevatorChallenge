@@ -24,6 +24,7 @@ Some of the assumptions that I made for this implementation
 - Can press any number of floor buttons in any order at any given time in the elevator via REST (including OpenAPI/Swagger UI).
 - The elevator algorithm, when it is running, will continually move upward until it reaches the top level requested. Then toggle back in the downward direction if necessary for
  for additional requests (Utilizes SCAN algorithm)
+- Emergency stop function that locks the elevator down until the emergency is cleared
 - Sample test classes that include some JUnit/Mockito unit tests to display how unit testing would be done on this type of application. As well as a SpringBootTest
   to confirm that the application starts.
 - Usage of global REST exception handling that significantly reduces code duplication and allows for meaningful response bodies from REST calls
