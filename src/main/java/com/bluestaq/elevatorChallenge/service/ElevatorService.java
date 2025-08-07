@@ -2,6 +2,7 @@ package com.bluestaq.elevatorChallenge.service;
 
 
 import com.bluestaq.elevatorChallenge.dto.ElevatorDTO;
+import com.bluestaq.elevatorChallenge.exception.ElevatorEmergencyException;
 import com.bluestaq.elevatorChallenge.service.commands.CloseDoorsCommand;
 import com.bluestaq.elevatorChallenge.service.commands.ElevatorCommand;
 import com.bluestaq.elevatorChallenge.service.commands.OpenDoorsCommand;
@@ -40,6 +41,7 @@ public class ElevatorService {
      */
     public void openDoors() {
         log.info("REST request: Open doors at floor {}", elevatorState.getCurrentFloor());
+        checkEmergencyState();
 
         try {
             // Use strategy to execute command outside of elevator logic loop
@@ -56,6 +58,7 @@ public class ElevatorService {
      */
     public void closeDoors() {
         log.info("REST request: Close doors at floor {}", elevatorState.getCurrentFloor());
+        checkEmergencyState();
 
         try {
             // Use strategy to execute command outside of elevator logic loop
@@ -73,6 +76,7 @@ public class ElevatorService {
      */
     public void pressFloorButton(int targetFloorNumber) {
         log.info("REST request: Press floor button {}", targetFloorNumber);
+        checkEmergencyState();
 
         pressButtonCommand.setTargetFloor(targetFloorNumber);
         pressButtonCommand.executeCommand(elevatorState);
@@ -80,7 +84,42 @@ public class ElevatorService {
     }
 
     /**
-     * Get all active floor requests
+     * Emergency stop button is pressed
+     */
+    public void emergencyStop() {
+        log.warn("EMERGENCY STOP ACTIVATED at floor {}", elevatorState.getCurrentFloor());
+
+        // Stop all movement and clear destinations
+        elevatorState.setCurrentMovementState(ElevatorMovement.EMERGENCY);
+        elevatorState.setDirection(ElevatorDirection.NONE);
+        elevatorState.setMovementOperationStartTimeMs(-1);
+
+        // Clear all floor requests
+        int clearedCount = destinationManager.getDestinationCount();
+        destinationManager.clearAllDestinations();
+
+        log.error("EMERGENCY: Cleared {} floor request(s). All operations blocked until cleared.", clearedCount);
+    }
+
+    /**
+     * Emergency has been cleared
+     */
+    public void emergencyClear() {
+        if (elevatorState.getCurrentMovementState() != ElevatorMovement.EMERGENCY) {
+            throw new IllegalArgumentException("Elevator is not in emergency mode");
+        }
+
+        log.info("Clearing emergency stop at floor {}", elevatorState.getCurrentFloor());
+
+        // Restore to idle state
+        elevatorState.setCurrentMovementState(ElevatorMovement.IDLE);
+        elevatorState.setDirection(ElevatorDirection.NONE);
+
+        log.info("Emergency cleared. Elevator restored to normal operation");
+    }
+
+    /**
+     * Get the current elevator state
      */
     public ElevatorDTO getCurrentElevatorState() {
         return new ElevatorDTO(
@@ -90,8 +129,6 @@ public class ElevatorService {
                 elevatorState.getCurrentDoorState(),
                 destinationManager.getAllDestinations());
     }
-
-    //TODO: add elevator status DTO return
 
     // ==================== SCHEDULED PROCESSING (MAIN LOOP) ====================
     //run this function every second to simulate the elevator logic. we will check every
@@ -103,6 +140,12 @@ public class ElevatorService {
     public void processElevatorOperations() {
         //wrapping in a try catch block for debugging and so the service main loop doesnt crash
         try {
+
+            // Skip processing if in emergency mode
+            if (elevatorState.getCurrentMovementState() == ElevatorMovement.EMERGENCY) {
+                return;
+            }
+
             // 1. Check door operation
             handleDoorOperations();
 
@@ -163,7 +206,7 @@ public class ElevatorService {
 
             log.info("Doors fully opened at floor {}", elevatorState.getCurrentFloor());
         }
-        //if not enough time has passed we wait for the next cycle
+        //if not enough time has passed we wait for the next tick
     }
 
     private void handleDoorOpen(long currentTime, long operationStartTime) {
@@ -179,7 +222,7 @@ public class ElevatorService {
             // Use the close doors command to ensure safety validation
             closeDoorsCommand.executeCommand(elevatorState);
         }
-        // If not time to auto-close yet, just wait for the next cycle
+        // If not time to auto-close yet, just wait for the next tick
     }
 
     private void handleDoorClosing(long currentTime, long operationStartTime) {
@@ -208,7 +251,7 @@ public class ElevatorService {
             // Clear the door operation timestamp since we're done
             elevatorState.setDoorOperationStartTimeMs(0);
         }
-        // If not enough time has passed, just wait for next cycle
+        // If not enough time has passed, just wait for next tick
     }
 
     // ==================== ELEVATOR MOVEMENT LOGIC ====================
@@ -311,10 +354,10 @@ public class ElevatorService {
         elevatorState.setCurrentFloor(newFloor);
         log.info("Elevator Moving to floor {}", newFloor);
 
-        // Check if we've reached ANY destination floor (NOT just the "next" one)
+        // Check if we've reached ANY destination floor NOT just the next one
         List<Integer> allDestinations = destinationManager.getAllDestinations();
         if (allDestinations.contains(newFloor)) {
-            // We've arrived at a destination floor
+            // We've arrived at a destination floor, execute arrival steps
             log.info("Reached destination floor {}", newFloor);
             arriveAtTargetFloor();
         } else {
@@ -323,7 +366,7 @@ public class ElevatorService {
         }
     }
     private void startMovementToFloor(Integer nextRequestedFloor) {
-        // Use ElevatorState for timing tracking only
+        // Using ElevatorState for timing tracking only
         elevatorState.setMovementOperationStartTimeMs(System.currentTimeMillis());
 
         // Set direction based on target
@@ -339,10 +382,9 @@ public class ElevatorService {
     }
 
     private void arriveAtTargetFloor() {
-        // We're already at the correct floor (updated by moveOneFloor)
         int currentFloor = elevatorState.getCurrentFloor();
 
-        log.info("🏁 Arrived at destination floor {}", currentFloor);
+        log.info("Arrived at destination floor {}", currentFloor);
 
         // Set elevator to idle
         elevatorState.setCurrentMovementState(ElevatorMovement.IDLE);
@@ -356,7 +398,7 @@ public class ElevatorService {
                 log.info("Successfully removed destination floor {}. Remaining destinations: {}",
                         currentFloor, destinationManager.getAllDestinations());
             } else {
-                log.warn("Arrived at floor {} but it wasn't in the destination queue", currentFloor);
+                log.error("Arrived at floor {} but it wasn't in the destination queue", currentFloor);
             }
 
             // Open doors automatically
@@ -391,6 +433,13 @@ public class ElevatorService {
         } else {
             elevatorState.setDirection(ElevatorDirection.NONE);
             log.debug("No more destinations, direction set to NONE");
+        }
+    }
+
+    // emergency state checker
+    private void checkEmergencyState() {
+        if (elevatorState.getCurrentMovementState() == ElevatorMovement.EMERGENCY) {
+            throw new ElevatorEmergencyException();
         }
     }
 }

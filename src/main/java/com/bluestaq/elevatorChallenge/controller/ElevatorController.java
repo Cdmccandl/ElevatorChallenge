@@ -5,10 +5,7 @@ import com.bluestaq.elevatorChallenge.service.ElevatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -50,5 +47,19 @@ public class ElevatorController {
     @GetMapping("/currentElevatorState")
     public ElevatorDTO getCurrentElevatorState() {
         return elevatorService.getCurrentElevatorState();
+    }
+
+    @Operation(summary = "Emergency Stop",
+            description = "Immediately stops elevator and blocks all operations")
+    @PostMapping("/emergency/stop")
+    public void emergencyStop() {
+        elevatorService.emergencyStop();
+    }
+
+    @Operation(summary = "Clear Emergency Stop",
+            description = "Restores normal elevator operation")
+    @PostMapping("/emergency/clear")
+    public void emergencyClear() {
+        elevatorService.emergencyClear();
     }
 }
