@@ -56,7 +56,7 @@ The below steps assumes you have already configured your machine with the above 
    see that updated here
 6. Observe the console startup success noting the amount of elevator floors and the starting floor in the application console log
 7. Now that we have confirmed the compiled jar starts up and is functioning, lets return to the terminal and build the container
-8. ```podman build -t elevator-challenge .```
+8. from the root project directory run ```podman build -t elevator-challenge .```
 9. ```podman images``` make sure you see the newly created image localhost/elevator-challenge
 10. deploy and run the container locally ```podman run -p 8080:8080 elevator-challenge```
 11. Open your browser to **http://localhost:8080/ElevatorChallenge/swagger-ui/index.html#/**
