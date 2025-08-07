@@ -1,114 +1,84 @@
 package com.bluestaq.elevatorChallenge.service.commands;
 
-import com.bluestaq.elevatorChallenge.service.Elevator;
+
+import com.bluestaq.elevatorChallenge.service.ElevatorDestinationManager;
+import com.bluestaq.elevatorChallenge.service.ElevatorMovement;
 import com.bluestaq.elevatorChallenge.service.ElevatorState;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.util.List;
+import javax.print.attribute.standard.Destination;
 
 /**
  * Command to press a floor button and add destination to the elevator queue.
  * Handles destination addition and movement initiation for floor-by-floor travel.
  */
 @Slf4j
+@Component
 public class PressButtonCommand implements ElevatorCommand {
 
     @Getter
-    private final int targetFloor;
+    @Setter
+    private int targetFloor;
 
-    public PressButtonCommand(int targetFloor) {
-        this.targetFloor = targetFloor;
+    @Autowired
+    private ElevatorDestinationManager destinationManager;
+
+
+
+    @Override
+    public boolean executeCommand(ElevatorState state) {
+        log.info("Executing press button command for floor {}", targetFloor);
+
+        //validate we can execute a floor command in the current state
+        if (!canExecuteCommand(state)) {
+            throw new IllegalArgumentException("Cannot press floor button " + targetFloor + " in current elevator state");
+        }
+
+        // Don't add to destinations list if already at target floor
+        if (targetFloor == state.getCurrentFloor()) {
+            log.info("Already at floor {}, no action inputted", targetFloor);
+            return true;
+        }
+
+        //add the destination if it is valid
+        boolean destinationAdded = destinationManager.addDestination(targetFloor, state);
+
+
+        if (destinationAdded) {
+            log.info("Floor {} button pressed successfully. Current Destinations: {}", targetFloor, destinationManager.getAllDestinations());
+            return true;
+        } else {
+            //TODO: should this throw an exception based on elevator movement state?
+            log.error("Failed to add floor {} to destinations", targetFloor);
+            return false;
+        }
     }
 
     @Override
-    public void execute(Elevator elevator) {
-
-        // Check if already at target floor
-        if (targetFloor == elevator.getCurrentFloor()) {
-            log.info("Already at floor {}, ignoring button press", targetFloor);
-            return;
+    public boolean canExecuteCommand(ElevatorState elevatorState) {
+        // Validate floor is in range
+        if (!elevatorState.isValidFloor(targetFloor)) {
+            log.warn("Invalid floor {}: must be between {} and {}",
+                    targetFloor, elevatorState.getMinFloor(), elevatorState.getMaxFloor());
+            return false;
         }
 
-        // Validate current state
-        if (!canExecuteCommandInCurrentState(elevator)) {
-            log.warn("Cannot press button for floor {} - elevator state: {}, busy: {}",
-                    targetFloor, elevator.getCurrentState(), elevator.isBusy());
-            return;
-        }
+        // Can press buttons in most states
+        ElevatorMovement currentState = elevatorState.getCurrentMovementState();
 
-        // Add to FIFO destination queue
-        elevator.addDestination(targetFloor);
-        log.info("Button pressed for floor {}. Current queue: {}", targetFloor, elevator.getDestinationList());
-
-        // Start movement if elevator is idle and can start moving
-        if (shouldInitiateMovement(elevator)) {
-            initiateMovementToNextDestination(elevator);
-        }
+        //TODO: unless I add another state is this necessary?
+        // Allow button presses when:
+        // - IDLE: Elevator is waiting
+        // - MOVING: Passengers can select additional floors while traveling
+        return currentState == ElevatorMovement.IDLE ||
+                currentState == ElevatorMovement.MOVING;
     }
 
-    @Override
     public String getCommandType() {
-        return "PRESS FLOOR BUTTON: " + targetFloor;
-    }
-
-    /**
-     * Check if button press can be executed in current elevator state
-     */
-    @Override
-    public boolean canExecuteCommandInCurrentState(Elevator elevator) {
-        ElevatorState currentState = elevator.getCurrentState();
-
-        // Can press buttons in most operational states
-        return currentState == ElevatorState.IDLE ||
-                currentState == ElevatorState.MOVING ||
-                currentState == ElevatorState.DOORS_OPEN;
-    }
-
-    /**
-     * Check if movement should be initiated after adding destination
-     */
-    private boolean shouldInitiateMovement(Elevator elevator) {
-        // Only initiate movement if:
-        // 1. Elevator is IDLE (not moving, doors closed)
-        // 2. Elevator can start movement (not busy with other operations)
-        // 3. There are destinations to process
-        return elevator.getCurrentState() == ElevatorState.IDLE &&
-                elevator.canStartMovement() &&
-                elevator.hasDestinations();
-    }
-
-    /**
-     * Initiate movement to the next destination in FIFO queue
-     */
-    private void initiateMovementToNextDestination(Elevator elevator) {
-        Integer nextDestination = elevator.peekNextDestination();
-        if (nextDestination == null) {
-            log.debug("No destinations to move to");
-            return;
-        }
-
-        if (nextDestination.equals(elevator.getCurrentFloor())) {
-            log.debug("Next destination {} is current floor, removing from queue", nextDestination);
-            elevator.pollNextDestination();
-            return;
-        }
-
-        // Start floor-by-floor movement to next destination
-        elevator.startMovementToFloor(nextDestination);
-    }
-
-
-    /**
-     * Get human-readable description of this command
-     */
-    public String getDescription() {
-        return String.format("Press button for floor %d", targetFloor);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("PressButtonCommand{targetFloor=%d, type='%s', description='%s'}",
-                targetFloor, getCommandType(), getDescription());
+        return "PRESS_FLOOR_BUTTON";
     }
 }

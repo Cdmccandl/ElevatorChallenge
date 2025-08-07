@@ -1,9 +1,12 @@
 package com.bluestaq.elevatorChallenge.service.commands;
 
-import com.bluestaq.elevatorChallenge.service.Elevator;
-import com.bluestaq.elevatorChallenge.service.ElevatorDirection;
+
+import com.bluestaq.elevatorChallenge.service.ElevatorDoor;
 import com.bluestaq.elevatorChallenge.service.ElevatorState;
+import com.bluestaq.elevatorChallenge.service.SafetyValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * A POJO that defines the open doors command on the elevator.
@@ -14,29 +17,34 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
  @Slf4j
+ @Component
  public class OpenDoorsCommand implements ElevatorCommand {
 
+    @Autowired
+    SafetyValidator safetyValidator;
+
     @Override
-    public void execute(Elevator elevator) {
-        //check if we can execute command based on elevator state
-        // Validate current state
-        if (!canExecuteCommandInCurrentState(elevator)) {
-            log.warn("Cannot open doors - elevator state: {}, busy: {}",
-                    elevator.getCurrentState(), elevator.isBusy());
-            return;
+    public boolean executeCommand(ElevatorState state) {
+
+        // Quick exit if doors already open
+        if (state.getCurrentDoorState() == ElevatorDoor.OPEN) {
+            log.debug("Doors already open at floor {}", state.getCurrentFloor());
+            return true;
         }
 
-        if (elevator.isDoorsOpen()) {
-            log.debug("Doors are already open at floor {}", elevator.getCurrentFloor());
-            return;
+        //validate and execute the door Opening procedure
+        if(canExecuteCommand(state)) {
+            state.setCurrentDoorState(ElevatorDoor.OPENING);
+            state.setDoorOperationStartTimeMs(System.currentTimeMillis());
+            log.info("Door opening initiated at floor {}", state.getCurrentFloor());
+            return true;
         }
 
-        //if we pass these checks we can start the door opening process
-        elevator.startDoorOperationTimer();
-        log.info("Started door opening process at floor {} ({}ms duration)",
-                elevator.getCurrentFloor(), elevator.getDoorOperationTimeMs());
+        //if we get here we are in an error scenario
 
-        }
+        throw new IllegalArgumentException("Cannot execute Open Doors command in current elevator state");
+
+    }
 
     @Override
     public String getCommandType() {
@@ -44,30 +52,9 @@ import lombok.extern.slf4j.Slf4j;
     }
 
     @Override
-    public boolean canExecuteCommandInCurrentState(Elevator elevator) {
+    public boolean canExecuteCommand(ElevatorState elevator) {
 
-        ElevatorState currentState = elevator.getCurrentState();
-
-        // Cannot open doors while movement is in progress (floor-by-floor movement)
-        if (elevator.isMovementInProgress()) {
-            log.error("Cannot open doors: elevator is moving between floors");
-            throw new IllegalArgumentException("Cannot open doors: elevator is moving between floors");
-        }
-
-        // Cannot open doors if door operation is already in progress
-        if (elevator.isDoorOperationInProgress()) {
-            log.debug("Cannot open doors: door operation already in progress");
-            return false;
-        }
-
-        // Cannot open doors if already open
-        if (elevator.isDoorsOpen()) {
-            log.debug("Cannot open doors: doors are already open");
-            return false;
-        }
-
-        return currentState == ElevatorState.IDLE || currentState == ElevatorState.DOORS_OPEN;
+        return safetyValidator.canOpenDoors(elevator);
     }
-
 
 }

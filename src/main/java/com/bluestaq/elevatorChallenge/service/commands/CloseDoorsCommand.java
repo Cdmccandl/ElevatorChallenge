@@ -1,81 +1,50 @@
 package com.bluestaq.elevatorChallenge.service.commands;
 
-import com.bluestaq.elevatorChallenge.service.Elevator;
+
+import com.bluestaq.elevatorChallenge.service.ElevatorDoor;
 import com.bluestaq.elevatorChallenge.service.ElevatorState;
+import com.bluestaq.elevatorChallenge.service.SafetyValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
 public class CloseDoorsCommand implements ElevatorCommand {
 
+    @Autowired
+    SafetyValidator safetyValidator;
+
+
     @Override
-    public void execute(Elevator elevator) {
-        // Validate current state
-        if (!canExecuteCommandInCurrentState(elevator)) {
-            log.warn("Cannot close doors - elevator state: {}, doors open: {}, busy: {}",
-                    elevator.getCurrentState(), elevator.isDoorsOpen(), elevator.isBusy());
-            return;
+    public boolean executeCommand(ElevatorState state) {
+
+        // Quick exit if doors already closed
+        if (state.getCurrentDoorState() == ElevatorDoor.CLOSED) {
+            log.info("Doors already closed at floor {}", state.getCurrentFloor());
+            return true;
         }
 
-        if (!elevator.isDoorsOpen()) {
-            log.debug("Doors are already closed at floor {}", elevator.getCurrentFloor());
-            return;
+        //Validate and then execute the door closing procedure
+        if(canExecuteCommand(state)) {
+            state.setCurrentDoorState(ElevatorDoor.CLOSING);
+            state.setDoorOperationStartTimeMs(System.currentTimeMillis());
+            log.info("Door closing initiated at floor {}", state.getCurrentFloor());
+            return true;
         }
 
-        // Start the door closing process
-        elevator.startDoorOperationTimer();
+        // If we get here we are in an error scenario, let this exception bubble up to the restControllerAdvice
+        //for a descriptive HTTP response
+        throw new IllegalArgumentException("Cannot execute Close Doors command in current elevator state");
+    }
 
-        log.info("Started door closing process at floor {} ({}ms duration)",
-                elevator.getCurrentFloor(), elevator.getDoorOperationTimeMs());
+    @Override
+    public boolean canExecuteCommand(ElevatorState elevator) {
+        return safetyValidator.canCloseDoors(elevator);
     }
 
     @Override
     public String getCommandType() {
-        return "CLOSE DOORS";
-    }
-
-    /**
-     * Check if doors can be closed in the current elevator state
-     */
-    public boolean canExecuteCommandInCurrentState(Elevator elevator) {
-        ElevatorState currentState = elevator.getCurrentState();
-
-        // Cannot close doors while movement is in progress
-        if (currentState == ElevatorState.MOVING) {
-            log.info("Cannot close doors: elevator is moving between floors");
-            return false;
-        }
-
-        // Cannot close doors if door operation is already in progress
-        if (elevator.isDoorOperationInProgress()) {
-            log.debug("Cannot close doors: door operation already in progress");
-            return false;
-        }
-
-        // Can only close doors when they are actually open
-        if (!elevator.isDoorsOpen()) {
-            log.debug("Cannot close doors: doors are already closed");
-            return false;
-        }
-
-        // Doors can only be closed when in DOORS_OPEN state
-        if (currentState != ElevatorState.DOORS_OPEN) {
-            log.debug("Cannot close doors: elevator not in DOORS_OPEN state (current: {})", currentState);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get human-readable description of this command
-     */
-    public String getDescription() {
-        return "Close elevator doors and resume operation";
-    }
-
-
-    @Override
-    public String toString() {
-        return "CloseDoorsCommand{type='" + getCommandType() + "', description='" + getDescription() + "'}";
+        return "";
     }
 }

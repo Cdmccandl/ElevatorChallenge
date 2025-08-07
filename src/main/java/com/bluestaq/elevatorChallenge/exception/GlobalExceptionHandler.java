@@ -14,19 +14,19 @@ public class GlobalExceptionHandler {
     // Handle specific exceptions
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorDetails handleException(IllegalArgumentException ex, WebRequest request) {
-        return new ErrorDetails(ex.getMessage(), request.getDescription(false));
+    public ErrorMessageDetails handleException(IllegalArgumentException ex, WebRequest request) {
+        return new ErrorMessageDetails(ex.getMessage(), request.getDescription(false));
     }
 
     // Error details class
     @Setter
     @Getter
-    public static class ErrorDetails {
+    public static class ErrorMessageDetails {
         // Getters and setters
         private String message;
         private String details;
 
-        public ErrorDetails(String message, String details) {
+        public ErrorMessageDetails(String message, String details) {
             this.message = message;
             this.details = details;
         }

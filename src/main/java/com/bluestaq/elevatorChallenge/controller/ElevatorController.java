@@ -1,6 +1,7 @@
 package com.bluestaq.elevatorChallenge.controller;
 
-import com.bluestaq.elevatorChallenge.service.ElevatorCommandService;
+import com.bluestaq.elevatorChallenge.dto.ElevatorDTO;
+import com.bluestaq.elevatorChallenge.service.ElevatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import java.util.List;
 public class ElevatorController {
 
     @Autowired
-    ElevatorCommandService elevatorService;
+    ElevatorService elevatorService;
 
     // Open door request
     @Operation(summary = "Press Open Door button in Elevator",
@@ -37,17 +38,17 @@ public class ElevatorController {
 
     // Press floor number request
     @Operation(summary = "Press any floor button in Elevator",
-            description = "Press any floor button in Elevator")
+            description = "Press any floor button in Elevator. Uses SCAN algorithm for optimal routing.")
     @GetMapping("/pressFloorNumber")
     public void requestFloorNumber(@RequestParam int targetFloorNumber) {
         elevatorService.pressFloorButton(targetFloorNumber);
     }
 
-//    // Get all the floor requests active
-//    @Operation(summary = "Queries Elevator for all active requests it is tracking",
-//            description = "Queries Elevator for all active requests it is tracking")
-//    @GetMapping("/activeFloorRequests")
-//    public List<FloorDto> getActiveFloorRequests() {
-//        return elevatorService.getActiveFloorRequests();
-//    }
+    // Get the current status of the elevator
+    @Operation(summary = "Queries Elevator for its current Status",
+            description = "Queries Elevator for all active requests it is tracking as well as its direction,door, and movement information")
+    @GetMapping("/currentElevatorState")
+    public ElevatorDTO getCurrentElevatorState() {
+        return elevatorService.getCurrentElevatorState();
+    }
 }
