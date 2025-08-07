@@ -3,6 +3,8 @@ A homework coding challenge given to me by Bluestaq to simulate an Elevator. The
 
 [![Build Status](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge.svg?token=QA1pjUWHEzzRjMXv5zS3&branch=main)](https://app.travis-ci.com/Cdmccandl/ElevatorChallenge) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Cdmccandl_ElevatorChallenge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)
 
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=Cdmccandl_ElevatorChallenge)
+
 
 ## Assumptions
 Some of the assumptions that I made for this implementation
