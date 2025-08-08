@@ -12,6 +12,7 @@ Some of the assumptions that I made for this implementation
 - The amount of people walking into or exiting the elevator is untracked.
 - The weight limit of the elevator is untracked, it will always function
 - There are no basement floors
+- There is no handling for cancellation of a floor request once submitted.
 
 ## Features
 - Configurable number of floors at startup.
@@ -32,12 +33,13 @@ Some of the assumptions that I made for this implementation
 - Dockerfile included that containerizes the microservice
 - Travis CI integration to show build results, codeQL integration to show security concerns on the codebase.
 
-## Potential Enhancements
+## Potential Enhancements and Features not implemented
 - Change the number of floors or elevator timers during RUNTIME
 - A spring logging framework, with this being asked to include a containerized option this would have been a nice touch
 - More than one elevator, I believe the design pattern applied here allows for scalability when adding more elevators
 - Only minimal javadoc was actually put in place, generally on classes themselves but I commented lots throughout to detail the specific algorithm/design patterns applied
 - Some form of front end implementation, even some ASCII graphics returned from the rest request would be interesting.
+- Store elevator logs, current state, or command history in a database
 - Additional CICD functionalty, full code coverage results and more strict quality gating. automations to deploy/test container image
 
 ## Development Tools
