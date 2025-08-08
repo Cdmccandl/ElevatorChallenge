@@ -1,5 +1,8 @@
 package com.bluestaq.elevatorchallenge.service;
 
+import lombok.Getter;
+
+@Getter
 public enum ElevatorMovement {
 
     IDLE("Elevator is stationary and waiting to execute its next command"),
@@ -11,10 +14,6 @@ public enum ElevatorMovement {
 
     ElevatorMovement(String description) {
         this.description = description;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     @Override

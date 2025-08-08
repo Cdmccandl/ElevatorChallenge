@@ -1,5 +1,8 @@
 package com.bluestaq.elevatorchallenge.service;
 
+import lombok.Getter;
+
+@Getter
 public enum ElevatorDirection {
     UP(1, "Moving upward"),
     DOWN(-1, "Moving downward"),
@@ -11,14 +14,6 @@ public enum ElevatorDirection {
     ElevatorDirection(int value, String description) {
         this.value = value;
         this.description = description;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     // Helper methods for direction logic
