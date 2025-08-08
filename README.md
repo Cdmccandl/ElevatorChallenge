@@ -19,15 +19,17 @@ Some of the assumptions that I made for this implementation
 - Configurable time to wait while elevator door is open on a floor at startup.
 - Configurable time to wait for the doors to open or close
 - Can press the open door button to reset the open door timer.
-- An OpenAPI/Swagger interface visualizing api Docs for the application
 - Can request to close an elevator door early, before the open action is complete
 - Can press any number of floor buttons in any order at any given time in the elevator via REST (including OpenAPI/Swagger UI).
+- Can press Call Elevator button with direction and floor number
 - The elevator algorithm, when it is running, will continually move upward until it reaches the top level requested. Then toggle back in the downward direction if necessary for
  for additional requests (Utilizes SCAN algorithm)
 - Emergency stop function that locks the elevator down until the emergency is cleared
+- - An OpenAPI/Swagger interface visualizing api Docs for the application
 - Sample test classes that include some JUnit/Mockito unit tests to display how unit testing would be done on this type of application. As well as a SpringBootTest
   to confirm that the application starts.
 - Usage of global REST exception handling that significantly reduces code duplication and allows for meaningful response bodies from REST calls
+- Dockerfile included that containerizes the microservice
 - Travis CI integration to show build results, codeQL integration to show security concerns on the codebase.
 
 ## Potential Enhancements
