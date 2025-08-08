@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Command to press a floor button and add destination to the elevator queue.
+ * Command to press a floor button within the elevator and add destination to the elevator queue.
  * Handles destination addition and movement initiation for floor-by-floor travel.
  */
 @Slf4j
@@ -38,7 +38,7 @@ public class PressButtonCommand implements ElevatorCommand {
 
         // Don't add to destinations list if already at target floor
         if (targetFloor == state.getCurrentFloor()) {
-            log.info("Already at floor {}, and elevator is MOVING movement action ignored", targetFloor);
+            log.info("Already at floor {}, movement action ignored", targetFloor);
             return true;
         }
 

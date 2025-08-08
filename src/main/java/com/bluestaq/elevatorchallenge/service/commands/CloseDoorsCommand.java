@@ -39,8 +39,8 @@ public class CloseDoorsCommand implements ElevatorCommand {
     }
 
     @Override
-    public boolean canExecuteCommand(ElevatorState elevator) {
-        return safetyValidator.canCloseDoors(elevator);
+    public boolean canExecuteCommand(ElevatorState state) {
+        return safetyValidator.canCloseDoors(state);
     }
 
 }

@@ -39,9 +39,9 @@ import org.springframework.stereotype.Component;
     }
 
     @Override
-    public boolean canExecuteCommand(ElevatorState elevator) {
+    public boolean canExecuteCommand(ElevatorState state) {
 
-        return safetyValidator.canOpenDoors(elevator);
+        return safetyValidator.canOpenDoors(state);
     }
 
 }
