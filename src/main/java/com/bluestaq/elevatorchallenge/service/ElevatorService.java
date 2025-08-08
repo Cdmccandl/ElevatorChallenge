@@ -18,19 +18,19 @@ import java.util.List;
 public class ElevatorService {
 
     @Autowired
-    private ElevatorState elevatorState;
+    ElevatorState elevatorState;
 
     @Autowired
-    private OpenDoorsCommand openDoorsCommand;
+    OpenDoorsCommand openDoorsCommand;
 
     @Autowired
-    private CloseDoorsCommand closeDoorsCommand;
+    CloseDoorsCommand closeDoorsCommand;
 
     @Autowired
-    private PressButtonCommand pressButtonCommand;
+    PressButtonCommand pressButtonCommand;
 
     @Autowired
-    private ElevatorDestinationManager destinationManager;
+    ElevatorDestinationManager destinationManager;
 
     // ==================== Rest request handling ====================
 
