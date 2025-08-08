@@ -50,7 +50,6 @@ public class PressButtonCommand implements ElevatorCommand {
             log.info("Floor {} button pressed successfully. Current Destinations: {}", targetFloor, destinationManager.getAllDestinations());
             return true;
         } else {
-            //TODO: should this throw an exception based on elevator movement state?
             log.error("Failed to add floor {} to destinations", targetFloor);
             return false;
         }

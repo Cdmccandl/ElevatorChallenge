@@ -223,8 +223,8 @@ public class ElevatorDestinationManager {
                     nextDown = floor;
                 }
             }
-            // If no floors below current, get any floor in the downward set
-            //TODO isnt this block always true?
+
+            //this is an edge case that we likely dont need but is safe to have
             if (nextDown == null && !floorsInDirection.isEmpty()) {
                 nextDown = Collections.max(floorsInDirection);
             }
