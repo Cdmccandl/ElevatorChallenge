@@ -1,23 +1,20 @@
 package com.bluestaq.elevatorchallenge.service;
 
 import com.bluestaq.elevatorchallenge.exception.ElevatorEmergencyException;
+import com.bluestaq.elevatorchallenge.service.commands.CallElevatorCommand;
 import com.bluestaq.elevatorchallenge.service.commands.CloseDoorsCommand;
 import com.bluestaq.elevatorchallenge.service.commands.OpenDoorsCommand;
 import com.bluestaq.elevatorchallenge.service.commands.PressButtonCommand;
-import jakarta.validation.constraints.AssertFalse;
-import jakarta.validation.constraints.AssertTrue;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-
+import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -45,6 +42,9 @@ public class ElevatorServiceTest {
 
     @InjectMocks
     private PressButtonCommand pressButtonCommand = Mockito.spy(PressButtonCommand.class);
+
+    @InjectMocks
+    private CallElevatorCommand callElevatorCommand = Mockito.spy(CallElevatorCommand.class);
 
     @InjectMocks
     ElevatorService elevatorService;
@@ -123,19 +123,41 @@ public class ElevatorServiceTest {
         assertSame(ElevatorDirection.UP, elevator.getDirection());
     }
 
+    // Test fails if it takes longer than 20 seconds, dont want an infinite loop scenario
     @Test
+    @Timeout(value = 20, unit = TimeUnit.SECONDS)
     public void testElevatorClearsFloorRequestWhenTargetFloorReached() {
 
         elevatorService.pressFloorButton(5);
-        elevatorService.processElevatorOperations();
-        // check the floor queue is populated
-        assertFalse(elevatorService.destinationManager.getAllDestinations().isEmpty());
-        //set current floor to 5 for test, we are skipping simulating the working loop
-        elevator.setCurrentFloor(5);
-        elevator.setCurrentMovementState(ElevatorMovement.IDLE);
-        elevatorService.processElevatorOperations();
+        // Let elevator naturally move to floor 5
+        while (elevatorService.destinationManager.getAllDestinations().contains(5)) {
+            elevatorService.processElevatorOperations();
+            // Add a reasonable timeout to avoid infinite loops in tests
+        }
         //check that our destination queue is empty
         assertTrue(elevatorService.destinationManager.getAllDestinations().isEmpty());
+    }
+
+    @Test
+    public void testCallElevator_InvalidDirections() {
+        // Test edge cases for call buttons
+        assertThrows(IllegalArgumentException.class, () ->
+                elevatorService.callElevator(1, ElevatorDirection.DOWN)); // Can't go DOWN from floor 1
+
+        assertThrows(IllegalArgumentException.class, () ->
+                elevatorService.callElevator(20, ElevatorDirection.UP)); // Can't go UP from top floor
+    }
+
+    @Test
+    public void testCallElevator_RespectDirectionRequest() {
+        elevator.setCurrentFloor(5);
+        elevatorService.pressFloorButton(10);
+        elevatorService.callElevator(8, ElevatorDirection.DOWN);
+
+        // Should go UP to 10 first, then DOWN to 8
+        assertTrue(destinationManager.downwardFloors.contains(8));
+        assertTrue(destinationManager.upwardFloors.contains(10));
+
     }
 
     @Test
@@ -145,6 +167,29 @@ public class ElevatorServiceTest {
         elevatorService.processElevatorOperations();
         // check the floor queue is populated with ONE element
         assertEquals(1, elevatorService.destinationManager.getAllDestinations().size());
+    }
+
+    @Test
+    public void testFloorBoundaries() {
+        // Test invalid floors
+        assertThrows(IllegalArgumentException.class, () ->
+                elevatorService.pressFloorButton(0));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                elevatorService.pressFloorButton(21));
+    }
+
+    @Test
+    public void testCallElevatorCurrentFloorButton() {
+        Mockito.doReturn(true).when(safetyValidator).canOpenDoors(Mockito.any());
+        elevator.setCurrentFloor(5);
+        elevator.setCurrentMovementState(ElevatorMovement.IDLE);
+        elevator.setCurrentDoorState(ElevatorDoor.CLOSED);
+
+        elevatorService.callElevator(5, ElevatorDirection.DOWN); // Same floor
+        // Should open doors, not add to destinations
+        assertEquals(ElevatorDoor.OPENING, elevator.getCurrentDoorState());
+        assertTrue(elevatorService.destinationManager.getAllDestinations().isEmpty());
     }
 
     // =================== Emergency Button Tests ================================
