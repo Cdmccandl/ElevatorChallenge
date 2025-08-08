@@ -3,6 +3,7 @@ package com.bluestaq.elevatorchallenge.service;
 
 import com.bluestaq.elevatorchallenge.dto.ElevatorDTO;
 import com.bluestaq.elevatorchallenge.exception.ElevatorEmergencyException;
+import com.bluestaq.elevatorchallenge.service.commands.CallElevatorCommand;
 import com.bluestaq.elevatorchallenge.service.commands.CloseDoorsCommand;
 import com.bluestaq.elevatorchallenge.service.commands.OpenDoorsCommand;
 import com.bluestaq.elevatorchallenge.service.commands.PressButtonCommand;
@@ -31,6 +32,9 @@ public class ElevatorService {
 
     @Autowired
     ElevatorDestinationManager destinationManager;
+
+    @Autowired
+    CallElevatorCommand callElevatorCommand;
 
     // ==================== Rest request handling ====================
 
@@ -88,6 +92,20 @@ public class ElevatorService {
 
     }
 
+    public void callElevator(int currentFloorNumber, ElevatorDirection requestedDirection) {
+        log.info("REST request: Call elevator {}, Direction {}", currentFloorNumber, requestedDirection);
+        checkEmergencyState();
+
+        //if elevator is IDLE and currentFloor button is pressed we open the doors
+        if(checkIfButtonPressedOnCurrentFloor(currentFloorNumber)) {
+            return;
+        }
+
+        callElevatorCommand.setTargetFloor(currentFloorNumber);
+        callElevatorCommand.setRequestedDirection(requestedDirection);
+        callElevatorCommand.executeCommand(elevatorState);
+    }
+
     /**
      * Emergency stop button is pressed
      */
@@ -132,7 +150,9 @@ public class ElevatorService {
                 elevatorState.getCurrentMovementState(),
                 elevatorState.getDirection(),
                 elevatorState.getCurrentDoorState(),
-                destinationManager.getAllDestinations());
+                destinationManager.getAllDestinations(),
+                destinationManager.getUpwardFloors(),
+                destinationManager.getDownwardFloors());
     }
 
     // ==================== SCHEDULED PROCESSING (MAIN LOOP) ====================
@@ -331,9 +351,14 @@ public class ElevatorService {
         }
     }
 
+    //stop at the next planned destination based on the current moving direction
     private void moveOneFloor() {
         ElevatorDirection direction = elevatorState.getDirection();
         int currentFloor = elevatorState.getCurrentFloor();
+
+        // get the destination BEFORE we move
+        Integer nextDestination = destinationManager.getNextDestination(elevatorState);
+
         int newFloor;
 
         // Move one floor in the current direction
@@ -351,7 +376,10 @@ public class ElevatorService {
 
         // Validate new floor is within bounds
         if (!elevatorState.isValidFloor(newFloor)) {
-            log.error("Cannot move to invalid floor {}", newFloor);
+            log.error("Cannot move to invalid floor {} - stopping movement", newFloor);
+            // Stop movement and reassess direction
+            elevatorState.setCurrentMovementState(ElevatorMovement.IDLE);
+            elevatorState.setDirection(ElevatorDirection.NONE);
             return;
         }
 
@@ -359,17 +387,22 @@ public class ElevatorService {
         elevatorState.setCurrentFloor(newFloor);
         log.info("Elevator Moving to floor {}", newFloor);
 
-        // Check if we've reached ANY destination floor NOT just the next one
-        List<Integer> allDestinations = destinationManager.getAllDestinations();
-        if (allDestinations.contains(newFloor)) {
-            // We've arrived at a destination floor, execute arrival steps
-            log.info("Reached destination floor {}", newFloor);
+        // Check if we should stop at this floor using the destination we got before moving
+        if (nextDestination != null && nextDestination == newFloor) {
             arriveAtTargetFloor();
         } else {
-            // Reset timer for next floor movement
+            // Continue moving - reset timer for next floor movement
             elevatorState.setMovementOperationStartTimeMs(System.currentTimeMillis());
+
+            // Debug logging to understand what's happening, still useful at trace level
+            if (nextDestination != null) {
+                log.trace("Passing floor {} - next destination is floor {}", newFloor, nextDestination);
+            } else {
+                log.trace("Passing floor {} - no destinations", newFloor);
+            }
         }
     }
+
     private void startMovementToFloor(Integer nextRequestedFloor) {
         // Using ElevatorState for timing tracking only
         elevatorState.setMovementOperationStartTimeMs(System.currentTimeMillis());
@@ -395,12 +428,12 @@ public class ElevatorService {
         elevatorState.setCurrentMovementState(ElevatorMovement.IDLE);
 
         try {
-            // Remove this specific floor from destinations
-            log.info("About to remove destination. Current destinations: {}", destinationManager.getAllDestinations());
 
+            log.trace("About to remove destination. Current destinations: {}", destinationManager.getAllDestinations());
+            // Remove this specific floor from destinations
             boolean removed = destinationManager.removeDestination(currentFloor);
             if (removed) {
-                log.info("Successfully removed destination floor {}. Remaining destinations: {}",
+                log.debug("Successfully removed destination floor {}. Remaining destinations: {}",
                         currentFloor, destinationManager.getAllDestinations());
             } else {
                 log.error("Arrived at floor {} but it wasn't in the destination queue", currentFloor);

@@ -1,6 +1,7 @@
 package com.bluestaq.elevatorchallenge.controller;
 
 import com.bluestaq.elevatorchallenge.dto.ElevatorDTO;
+import com.bluestaq.elevatorchallenge.service.ElevatorDirection;
 import com.bluestaq.elevatorchallenge.service.ElevatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,23 @@ public class ElevatorController {
         return elevatorService.getCurrentElevatorState();
     }
 
+    //Call elevator to current floor to serve an UP request
+    @Operation(summary = "Request elevator to come to a floor and to go UP from that floor",
+            description = "Press UP button on a specific floor to call elevator")
+    @GetMapping("/callElevator/up")
+    public void callElevatorToMoveUp(@RequestParam int currentFloorNumber) {
+        elevatorService.callElevator(currentFloorNumber, ElevatorDirection.UP);
+    }
+
+    //Call elevator to current floor to serve a DOWN request
+    @Operation(summary = "Request elevator to come to a floor and to go DOWN from that floor",
+            description = "Press DOWN button on a specific floor to call elevator")
+    @GetMapping("/callElevator/down")
+    public void callElevatorToMoveDown(@RequestParam int currentFloorNumber) {
+        elevatorService.callElevator(currentFloorNumber, ElevatorDirection.DOWN);
+    }
+
+    //Immediately stop elevator and clear all destinations
     @Operation(summary = "Emergency Stop",
             description = "Immediately stops elevator and blocks all operations")
     @PostMapping("/emergency/stop")
@@ -54,6 +72,7 @@ public class ElevatorController {
         elevatorService.emergencyStop();
     }
 
+    //unblock the elevator from the emergency state
     @Operation(summary = "Clear Emergency Stop",
             description = "Restores normal elevator operation")
     @PostMapping("/emergency/clear")
