@@ -21,6 +21,7 @@ Some of the assumptions that I made for this implementation
 - Configurable time to wait for the doors to open or close
 - Can press the open door button to reset the open door timer.
 - Can request to close an elevator door early, before the open action is complete
+- Auto closing doors after the open button is pressed
 - Can press any number of floor buttons in any order at any given time in the elevator via REST (including OpenAPI/Swagger UI).
 - Can press Call Elevator button with direction and floor number
 - The elevator algorithm, when it is running, will continually move upward until it reaches the top level requested. Then toggle back in the downward direction if necessary for
