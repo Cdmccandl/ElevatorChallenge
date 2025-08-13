@@ -27,7 +27,7 @@ Some of the assumptions that I made for this implementation
 - The elevator algorithm, when it is running, will continually move upward until it reaches the top level requested. Then toggle back in the downward direction if necessary for
  for additional requests (Utilizes SCAN algorithm)
 - Emergency stop function that locks the elevator down until the emergency is cleared
-- - An OpenAPI/Swagger interface visualizing api Docs for the application
+- An OpenAPI/Swagger interface visualizing api Docs for the application
 - Sample test classes that include some JUnit/Mockito unit tests to display how unit testing would be done on this type of application. As well as a SpringBootTest
   to confirm that the application starts.
 - Usage of global REST exception handling that significantly reduces code duplication and allows for meaningful response bodies from REST calls
@@ -41,7 +41,7 @@ Some of the assumptions that I made for this implementation
 - Only minimal javadoc was actually put in place, generally on classes themselves but I commented lots throughout to detail the specific algorithm/design patterns applied
 - Some form of front end implementation, even some ASCII graphics returned from the rest request would be interesting.
 - Store elevator logs, current state, or command history in a database
-- Additional CICD functionalty, full code coverage results and more strict quality gating. automations to deploy/test container image
+- Additional CICD functionality, full code coverage results and more strict quality gating. automations to deploy/test container image
 
 ## Development Tools
 This project was built with the following tools & framework:
